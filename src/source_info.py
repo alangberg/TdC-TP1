@@ -12,7 +12,7 @@ if params_count > 1:
 		print "Use: python source_info.py [input_file]=sniffer_output.pcap"
 
 #Simbolo = < unicast/broadcast, ARP/IP/IPv6/?? >
-packets_count = len(rdpcap(input_file))
+packets_count = len(rdpcap(input_file))  #Reads all the packets of the pcap file
 broadcast_addr = 'ff:ff:ff:ff:ff:ff'
 
 
@@ -37,12 +37,12 @@ def analyze_pkt_S1(pkt):
 	uni_or_broad = is_unicast_or_broadcast(pkt)
 	protocol = get_protocol(pkt)
 	symbol = (uni_or_broad, protocol)
-	symbols_S1[symbol] = symbols_S1.get(symbol, 0.0) + 1.0  #Aumenta 1 la cantidad de apariciones del simbolo
+	symbols_S1[symbol] = symbols_S1.get(symbol, 0.0) + 1.0  #Adds 1 to symbol apparitions count
 
 def source_symbol_probabilities(symbols):
 	total = sum(symbols.values())
 	probabilities = {}
-	#Calculo la probabilidad de cada simbolo
+	#Calculate each symbol probability
 	for k,v in symbols.iteritems():
 		probabilities[k] = v / total
 
@@ -87,7 +87,7 @@ class Source_S1(object):
 
 symbols_S1 = {}
 print "Reading input pcap file."
-sniff(prn=analyze_pkt_S1, offline=input_file, count=packets_count, store=0)  #Leo archivo pcap
+sniff(prn=analyze_pkt_S1, offline=input_file, count=packets_count, store=0)  #Read pcap file
 print "Done. Creating S1 source."
 source_S1 = Source_S1(symbols_S1, 'S1')
 source_S1.print_source_info()
