@@ -36,44 +36,61 @@ def get_protocol(pkt):
 	return protocol
 
 def analyze_pkt_S1(pkt):
-	global source
+	global symbols_S1
 	uni_or_broad = is_unicast_or_broadcast(pkt)
 	protocol = get_protocol(pkt)
 	symbol = (uni_or_broad, protocol)
-	source[symbol] = source.get(symbol, 0.0) + 1.0  #Aumenta 1 la cantidad de apariciones del simbolo
+	symbols_S1[symbol] = symbols_S1.get(symbol, 0.0) + 1.0  #Aumenta 1 la cantidad de apariciones del simbolo
 
-def source_symbol_probabilities(source):
-	total = sum(source.values())
+def source_symbol_probabilities(symbols):
+	total = sum(symbols.values())
 	probabilities = {}
 	#Calculo la probabilidad de cada simbolo
-	for k,v in source.iteritems():
-		probabilities[k] = v / float(total)
+	for k,v in symbols.iteritems():
+		probabilities[k] = v / total
 
 	return probabilities
 
-def entropy(source):
-	probabilities = source_symbol_probabilities(source)
-	entropy = 0
-	#Calculo la entropia
-	print source
-	for k in source.keys():
-		pk = probabilities[k]
-		ik = -log(pk, 2)
-		entropy += pk * ik
+class Source_S1(object):
+	
+	def __init__(self, symbols, name):
+		self.probabilities = source_symbol_probabilities(symbols)
+		self.symbols = self.probabilities.keys()
+		self.name = name
 
-	return entropy
+	def entropy(self):	
+		return sum([self.probabilities[s] * -log(self.probabilities[s], 2) for s in self.symbols])
 
-def max_entropy(source):
-	symbols_qty = len(source.keys())
-	if symbols_qty == 0:
-		return 0
+	def max_entropy(self):
+		if len(self.symbols) == 0:
+			return 0
 
-	return log(symbols_qty, 2)
+		return log(len(self.symbols), 2)
 
+	def name(self):
+		return self.name
 
-source = {}
-print "Leyendo pcap fuente"
+	def probabilities(self):
+		return self.probabilities
+
+	def print_probabilities(self):
+		print "Source %s symbols probabilities: " %self.name
+		print self.probabilities
+
+	def print_symbols(self):
+		print "Source %s symbols: " %self.name
+		print self.symbols
+
+	def print_source_info(self):
+		print "{0}'s info:".format(self.name)
+		self.print_probabilities()
+		print "{0}'s entropy is: {1}".format(self.name, self.entropy()) 
+		print "{0}'s maximum entropy is: {1}".format(self.name, self.max_entropy())
+		
+
+symbols_S1 = {}
+print "Reading input pcap file."
 sniff(prn=analyze_pkt_S1, offline=input_file, count=packets_count, store=0)  #Leo archivo pcap
-print "Termine de leer fuente. Calculando entropia..."
-entropy = entropy(source)
-print "La entropia de la fuente S1 es: %d" %entropy
+print "Done. Creating S1 source."
+source_S1 = Source_S1(symbols_S1, 'S1')
+source_S1.print_source_info()
