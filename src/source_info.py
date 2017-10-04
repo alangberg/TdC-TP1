@@ -4,18 +4,15 @@ from math import log
 import sys, os
 
 input_file = "sniffer_output.pcap"
-packets_count = 15000
 
 params_count = len(sys.argv)
 if params_count > 1:
 	input_file = sys.argv[1]
 	if params_count > 2:
-		packets_count = sys.argv[2]
-	if params_count > 3:
-		print "Use: python source_info.py [input_file]=sniffer_output.pcap [packet count]=15000"
+		print "Use: python source_info.py [input_file]=sniffer_output.pcap"
 
 #Simbolo = < unicast/broadcast, ARP/IP/IPv6/?? >
-
+packets_count = len(rdpcap(input_file))
 broadcast_addr = 'ff:ff:ff:ff:ff:ff'
 
 
