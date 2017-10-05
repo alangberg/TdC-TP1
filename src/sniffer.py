@@ -12,7 +12,7 @@ params_count = len(sys.argv)
 if params_count >= 2:
 	packets_count = int(sys.argv[1])
 	if params_count >= 3:
-		output_file = sys.argv[v2]
+		output_file = sys.argv[2]
 		if params_count == 4:
 			timeout = int(sys.argv[3])
 	if params_count > 4:
