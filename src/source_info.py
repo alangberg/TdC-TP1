@@ -1,9 +1,11 @@
 #! /usr/bin/python
 from scapy.all import *
 from math import log
+from abc import ABCMeta, abstractmethod
 import sys, os
 
 def is_unicast_or_broadcast(pkt):
+	broadcast_addr = 'ff:ff:ff:ff:ff:ff'
 	if pkt.dst == broadcast_addr:
 		return 'broadcast'
 	else:
@@ -15,12 +17,30 @@ def get_protocol(pkt):
 		pkt = pkt.payload
 		return pkt.name
 
-def analyze_pkt_S1(pkt):
-	global symbols_S1
-	uni_or_broad = is_unicast_or_broadcast(pkt)
-	protocol = get_protocol(pkt)
-	symbol = (uni_or_broad, protocol)
-	symbols_S1[symbol] = symbols_S1.get(symbol, 0.0) + 1.0  #Adds 1 to symbol apparitions count
+def is_who_has(pkt):
+	if ARP in pkt and pkt[ARP].op == 1:
+		return True
+
+	return False
+
+#Use closure to pass other arguments than de packet in the prn function of the sniff.
+def add_S1_sample(symbols_sample):
+	def analyze_pkt_S1(pkt):
+		uni_or_broad = is_unicast_or_broadcast(pkt)
+		protocol = get_protocol(pkt)
+		symbol = (uni_or_broad, protocol)
+		symbols_sample[symbol] = symbols_sample.get(symbol, 0.0) + 1.0  #Adds 1 to symbol apparitions count
+
+	return analyze_pkt_S1
+
+def add_S2_sample(symbols_sample):
+	#Assumes packets are ARP
+	def analyze_pkt_S2(pkt):
+		if is_who_has(pkt):
+			dstIP = pkt[ARP].pdst #Assume routers sends more who-has than other hosts		
+			symbols_sample[dstIP] = symbols_sample.get(dstIP, 0.0) + 1.0  #Adds 1 to symbol apparitions count
+
+	return analyze_pkt_S2
 
 def source_symbol_probabilities(symbols):
 	total = sum(symbols.values())
@@ -31,10 +51,10 @@ def source_symbol_probabilities(symbols):
 
 	return probabilities
 
-class Source_S1(object):
+class Source(object):
 	
-	def __init__(self, symbols, name='S1'):
-		self.probabilities = source_symbol_probabilities(symbols)
+	def __init__(self, symbols_sample, name='S'):
+		self.probabilities = source_symbol_probabilities(symbols_sample)
 		self.symbols = self.probabilities.keys()
 		self.name = name
 
@@ -72,39 +92,47 @@ def source_to_csv(output_file, source):
 	output_file += ".csv"
 	probabilities = source.symbol_probabilities()
 	#List of tuples with (uni_or_broad, protocol, probability, information)
-	symbols_info = [(k[0], k[1], str(v), str(-log(v, 2))) for k, v in probabilities.iteritems()]
+	#symbols_info = [(k[0], k[1], str(v), str(-log(v, 2))) for k, v in probabilities.iteritems()]
+	symbols_info = [(k, str(v), str(-log(v, 2))) for k, v in probabilities.iteritems()]
 	symbols_header = "Symbol; Probability; Information\n"
 	with open(output_file, 'w') as f:
 		#Print header and info of each source symbol
 		f.write(symbols_header)
 		for i in range(len(symbols_info)):
 			si = symbols_info[i]
-			f.write("({0}, {1}); {2}; {3}\n".format(si[0], si[1], si[2], si[3]))
+			#f.write("({0}, {1}); {2}; {3}\n".format(si[0], si[1], si[2], si[3]))
+			f.write("{0}; {1}; {2}\n".format(si[0], si[1], si[2]))
 
 		f.write("\n\n") #Separator
 		entropy_header = "Entropy; Maximum Entropy\n"
 		f.write(entropy_header)
 		f.write("{0};{1}".format(str(source.entropy()), str(source.max_entropy())))
 
-def pcap_table_S1(output_file):
-	global symbols_S1
-	global input_file
+#Read pcap file and model a source of type source_type
+def pcap_to_source(input_file, source_type=1):
+	symbols_sample = {}
 	print "Reading input pcap file."
-	sniff(prn=analyze_pkt_S1, offline=input_file, count=packets_count, store=0)  #Read pcap file
-	print "Done. Creating S1 source."
-	source_S1 = Source_S1(symbols_S1)
-	print "Done. Dumping source info to {0}_S1.csv".format(output_file)
-	#source_S1.print_source_info()
-	source_to_csv(output_file + "_S1", source_S1)
+	if source_type == 1:
+		sniff(prn=add_S1_sample(symbols_sample), offline=input_file, count=packets_count, store=0)  #Read pcap file and create S1 sample
+	elif source_type == 2:
+		sniff(prn=add_S2_sample(symbols_sample), filter='arp', offline=input_file, count=packets_count, store=0)  #Read pcap file and create S2 sample
+	else:
+		print "Error: source_type can only be 1 or 2"
+	
+	print "Creating S{0} source.".format(source_type)
+	source = Source(symbols_sample)
+	return source
+
+def pcap_table(input_file, output_file, source_type):	
+	source = pcap_to_source(input_file, source_type)
+	print "Dumping source info to {0}_S{1}.csv".format(output_file, source_type)
+	source_to_csv(output_file + "_S{0}".format(source_type), source)
 
 
 invalid_args_error = """ Use: python source_info.py [input_file]=sniffer_output.pcap [outputfile]=source_info [source_type]=1\n
 					Example: python source_info.py homeNetwork.pcap homeNetwork 1\n
 					Creates homeNetwork_S1.csv with the info from the source created by modelling homeNetwork.pcap as a S1 source.
 					"""
-
-symbols_S1 = {}
-symbols_S2 = {}
 	
 if __name__ == "__main__":
 
@@ -122,14 +150,6 @@ if __name__ == "__main__":
 				if params_count > 4:
 					print invalid_args_error
 
-	#Simbolo = < unicast/broadcast, ARP/IP/IPv6/?? >
 	packets_count = len(rdpcap(input_file))  #Reads all the packets of the pcap file
-	broadcast_addr = 'ff:ff:ff:ff:ff:ff'
-
-	if source_type == 1:
-		pcap_table_S1(output_file)
-	elif source_type == 2:
-		#TODO
-		pass
-	else:
-		print "source_type can only be 1 or 2"
+	pcap_table(input_file, output_file, source_type) #Dump source table to csv
+	
