@@ -2,6 +2,7 @@
 from scapy.all import *
 from math import log
 from abc import ABCMeta, abstractmethod
+import argparse
 import sys, os
 
 def is_unicast_or_broadcast(pkt):
@@ -136,19 +137,20 @@ invalid_args_error = """ Use: python source_info.py [input_file]=sniffer_output.
 	
 if __name__ == "__main__":
 
-	input_file = "sniffer_output.pcap"
-	output_file = "source_info"
-	source_type = 1
 
-	params_count = len(sys.argv)
-	if params_count > 1:
-		input_file = sys.argv[1]
-		if params_count > 2:
-			output_file = sys.argv[2]
-			if params_count > 3:
-				source_type = int(sys.argv[3])
-				if params_count > 4:
-					print invalid_args_error
+	parser = argparse.ArgumentParser(description='Analize a pcap file and produce the information table associated with it in csv format.')
+	parser.add_argument('-if', '-i', dest='ifile', action='store', default='sniffer_output',
+                    help='Optional pcap input file to be analized. Default = sniffer_output.pcap')
+	parser.add_argument('-of', '-o', dest='ofile', action='store', default="source_info",
+                    help='Optional output file. Default: source_info.')
+	parser.add_argument('-st', '-s', dest='st', action='store', type=int, default=1, choices=[1, 2],
+                    help='Source type to model with the input file. Must be 1 or 2. Default: 1')
+
+	args = parser.parse_args()
+
+	input_file = args.ifile + ".pcap"
+	output_file = args.ofile
+	source_type = args.st
 
 	packets_count = len(rdpcap(input_file))  #Reads all the packets of the pcap file
 	pcap_table(input_file, output_file, source_type) #Dump source table to csv
