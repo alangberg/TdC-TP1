@@ -95,19 +95,17 @@ def source_to_csv(output_file, source):
 	#List of tuples with (uni_or_broad, protocol, probability, information)
 	#symbols_info = [(k[0], k[1], str(v), str(-log(v, 2))) for k, v in probabilities.iteritems()]
 	symbols_info = [(k, str(v), str(-log(v, 2))) for k, v in probabilities.iteritems()]
-	symbols_header = "Symbol; Probability; Information\n"
+	symbols_header = "Symbol; Probability; Information; Entropy; Maximum Entropy\n"
 	with open(output_file, 'w') as f:
-		#Print header and info of each source symbol
+		#Print header and info of each source symbol. First row is different because it has the entropies.
 		f.write(symbols_header)
-		for i in range(len(symbols_info)):
+		s0 = symbols_info[0]
+		f.write("{0}; {1}; {2}; {3}; {4}\n".format(s0[0], s0[1], s0[2], str(source.entropy()), str(source.max_entropy())))
+
+		for i in range(1, len(symbols_info)):
 			si = symbols_info[i]
 			#f.write("({0}, {1}); {2}; {3}\n".format(si[0], si[1], si[2], si[3]))
 			f.write("{0}; {1}; {2}\n".format(si[0], si[1], si[2]))
-
-		f.write("\n\n") #Separator
-		entropy_header = "Entropy; Maximum Entropy\n"
-		f.write(entropy_header)
-		f.write("{0};{1}".format(str(source.entropy()), str(source.max_entropy())))
 
 #Read pcap file and model a source of type source_type
 def pcap_to_source(input_file, source_type=1):
