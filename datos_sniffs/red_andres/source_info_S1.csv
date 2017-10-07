@@ -1,0 +1,7 @@
+Symbol,,Probability,Information,Entropy,Maximum Entropy
+('unicast', 'EAPOL'),6.66666666667E-05,13.8726748803,0.4759135971,2.5849625007
+('broadcast', 'IP'),0.0308,5.0209258389,,
+('unicast', 'IPv6'),0.0015666667,9.3180860286,,
+('unicast', 'IP'),0.9278666667,0.1080105882,,
+('unicast', 'ARP'),0.0046666667,7.7433918633,,
+('broadcast', 'ARP'),0.0350333333,4.8351279263,,
