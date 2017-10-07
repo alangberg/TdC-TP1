@@ -18,12 +18,6 @@ def get_protocol(pkt):
 		pkt = pkt.payload
 		return pkt.name
 
-def is_who_has(pkt):
-	if ARP in pkt and pkt[ARP].op == 1:
-		return True
-
-	return False
-
 #Use closure to pass other arguments than de packet in the prn function of the sniff.
 def add_S1_sample(symbols_sample):
 	def analyze_pkt_S1(pkt):
@@ -37,7 +31,7 @@ def add_S1_sample(symbols_sample):
 def add_S2_sample(symbols_sample):
 	#Assumes packets are ARP
 	def analyze_pkt_S2(pkt):
-		if is_who_has(pkt):
+		if ARP in pkt:
 			dstIP = pkt[ARP].pdst #Assume routers sends more who-has than other hosts		
 			symbols_sample[dstIP] = symbols_sample.get(dstIP, 0.0) + 1.0  #Adds 1 to symbol apparitions count
 
