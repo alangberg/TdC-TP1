@@ -1,0 +1,8 @@
+Symbol;Probability;Information;Entropy;Maximum Entropy
+('broadcast', 'LLC');0.00113333333333;9.78521203902;0.554114753951;2.80735492206
+('unicast', 'EAPOL');0.0032;8.28771237955
+('broadcast', 'IP');0.0296;5.07825901392
+('unicast', 'IPv6');0.005;7.64385618977
+('unicast', 'IP');0.913733333333;0.130154908609
+('unicast', 'ARP');6.66666666667e-05;13.8726748803
+('broadcast', 'ARP');0.0472666666667;4.40303306303
