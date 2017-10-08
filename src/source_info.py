@@ -93,18 +93,20 @@ def source_to_csv(output_file, source):
 	output_file += ".csv"
 	probabilities = source.symbol_probabilities()
 	#List of tuples with (uni_or_broad, protocol, probability, information)
-	#symbols_info = [(k[0], k[1], str(v), str(-log(v, 2))) for k, v in probabilities.iteritems()]
-	symbols_info = [(k, str(v), str(-log(v, 2))) for k, v in probabilities.iteritems()]
+	symbols_info = sorted([(k, str(v), str(-log(v, 2))) for k, v in probabilities.iteritems()])
 	symbols_header = "Symbol;Probability;Information;Entropy;Maximum Entropy\n"
 	with open(output_file, 'w') as f:
 		#Print header and info of each source symbol. First row is different because it has the entropies.
-		f.write(symbols_header)
-		s0 = symbols_info[0]
-		f.write("{0};{1};{2};{3};{4}\n".format(s0[0], s0[1], s0[2], str(source.entropy()), str(source.max_entropy())))
+		if len(symbols_info) > 0:
+			f.write(symbols_header)
+			s0 = symbols_info[0]
+			f.write("{0};{1};{2};{3};{4}\n".format(s0[0], s0[1], s0[2], str(source.entropy()), str(source.max_entropy())))
 
-		for i in range(1, len(symbols_info)):
-			si = symbols_info[i]
-			f.write("{0};{1};{2}\n".format(si[0], si[1], si[2]))
+			for i in range(1, len(symbols_info)):
+				si = symbols_info[i]
+				f.write("{0};{1};{2}\n".format(si[0], si[1], si[2]))
+		else:
+			print "There were no ARP packets in pcap file."
 
 #Read pcap file and model a source of type source_type
 def pcap_to_source(input_file, source_type=1):
