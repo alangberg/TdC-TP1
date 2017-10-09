@@ -1,0 +1,6 @@
+Symbol;Probability;Information;Entropy;Maximum Entropy
+('broadcast', 'ARP');0.0026;8.58727266141;0.24613398221;2.32192809489
+('broadcast', 'IP');0.0241333333333;5.37282899319
+('unicast', 'ARP');0.0001;13.2877123795
+('unicast', 'IP');0.9669;0.0485614057687
+('unicast', 'IPv6');0.00626666666667;7.31808602859
